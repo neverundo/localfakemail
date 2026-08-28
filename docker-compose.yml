@@ -1,0 +1,81 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-localfakemail}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-localfakemail}
+      POSTGRES_DB: ${POSTGRES_DB:-localfakemail}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-localfakemail} -d ${POSTGRES_DB:-localfakemail}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - localfakemail
+
+  smtp:
+    build:
+      context: ./apps/smtp
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://localfakemail:localfakemail@db:5432/localfakemail}
+      SMTP_PORT: 1025
+      EMAIL_RETENTION_LIMIT: ${EMAIL_RETENTION_LIMIT:-500}
+    ports:
+      - "127.0.0.1:${SMTP_PORT:-1025}:1025"
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('net').connect(1025,'127.0.0.1').on('connect',()=>process.exit(0)).on('error',()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - localfakemail
+
+  web:
+    build:
+      context: ./apps/web
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://localfakemail:localfakemail@db:5432/localfakemail}
+      EMAIL_RETENTION_LIMIT: ${EMAIL_RETENTION_LIMIT:-500}
+      SMTP_HOST: 127.0.0.1
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      HOSTNAME: 0.0.0.0
+      PORT: 3000
+    ports:
+      - "127.0.0.1:${WEB_PORT:-8025}:3000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - localfakemail
+
+volumes:
+  pgdata:
+
+networks:
+  localfakemail:
+    driver: bridge

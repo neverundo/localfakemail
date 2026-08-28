@@ -1,0 +1,11 @@
+node_modules/
+.next/
+dist/
+build/
+.env
+*.log
+.DS_Store
+coverage/
+.turbo/
+prisma/*.db
+prisma/*.db-journal

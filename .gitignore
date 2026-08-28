@@ -1,0 +1,14 @@
+node_modules/
+.next/
+dist/
+build/
+.env
+*.log
+.DS_Store
+coverage/
+.turbo/
+apps/web/prisma/*.db
+apps/web/prisma/*.db-journal
+apps/web/node_modules/
+apps/smtp/node_modules/
+

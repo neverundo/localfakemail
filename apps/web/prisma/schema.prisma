@@ -1,0 +1,52 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Credential {
+  id           String    @id @default(cuid())
+  username     String    @unique
+  passwordHash String
+  label        String?
+  createdAt    DateTime  @default(now())
+  revokedAt    DateTime?
+  emails       Email[]
+}
+
+model Email {
+  id           String       @id @default(cuid())
+  messageId    String?
+  from         String
+  to           Json
+  cc           Json
+  bcc          Json
+  subject      String
+  textBody     String?
+  htmlBody     String?
+  headers      Json
+  raw          String
+  size         Int
+  readAt       DateTime?
+  createdAt    DateTime     @default(now())
+  credentialId String?
+  credential   Credential?  @relation(fields: [credentialId], references: [id], onDelete: SetNull)
+  attachments  Attachment[]
+
+  @@index([createdAt(sort: Desc)])
+}
+
+model Attachment {
+  id          String @id @default(cuid())
+  emailId     String
+  filename    String
+  contentType String
+  size        Int
+  content     Bytes
+  email       Email  @relation(fields: [emailId], references: [id], onDelete: Cascade)
+
+  @@index([emailId])
+}

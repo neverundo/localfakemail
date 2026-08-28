@@ -1,0 +1,42 @@
+---
+description: All app services must run entirely inside Docker
+alwaysApply: true
+---
+
+# Docker-only runtime
+
+localfakemail is a local dev tool that runs **100% via Docker Compose**. Every service — existing or new — must work end-to-end with `docker compose up --build`, without requiring a separate host process.
+
+## Required
+
+- Add or update a service in `docker-compose.yml` (network `localfakemail`, bind ports to `127.0.0.1` only).
+- Provide a `Dockerfile` under `apps/<service>/` with a production start command (`CMD` / `ENTRYPOINT`).
+- Configure env vars in `docker-compose.yml` and document new ones in `.env.example`.
+- Add a **healthcheck** so `depends_on: condition: service_healthy` works.
+- Verify with `docker compose up --build` — not `npm run dev`, `tsx watch`, or similar on the host.
+
+## Current layout
+
+| Service | Path | Host port |
+|---------|------|-----------|
+| `web` | `apps/web` | `8025` (HTTP UI + API) |
+| `smtp` | `apps/smtp` | `1025` (SMTP) |
+| `db` | Postgres image | internal only |
+
+## When adding a feature or service
+
+1. Implement code under `apps/<name>/`.
+2. Wire it into `docker-compose.yml`.
+3. Expose only what the developer needs on localhost; keep databases and internal APIs on the Docker network.
+4. Update `README.md` if ports or setup steps change.
+
+## Do not
+
+- Rely on `npm run dev` / `tsx watch` as the way to run the app in normal use.
+- Document host-only workflows as the primary path.
+- Add services that require manual installs (Node, Postgres, etc.) outside Docker.
+- Publish ports on `0.0.0.0` — localhost binding only.
+
+## Acceptable exception
+
+`npm run dev` may be used **only** for optional local iteration while developing; the Docker path must remain complete and is the source of truth for delivery.
