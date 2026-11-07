@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+  <!-- Top opening (~40%): green -->
+  <path
+    stroke="#5ecf93"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    d="M4 11.25 6.15 4.4A1.6 1.6 0 0 1 7.65 3.35h8.7a1.6 1.6 0 0 1 1.5 1.05L20 11.25"
+  />
+  <!-- Bottom tray (~60%) with front notch: near-white -->
+  <path
+    stroke="#eef5f0"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    d="M4 11.25h3.15c.58 0 1.1.32 1.36.84l.72 1.4c.26.52.78.84 1.36.84h2.82c.58 0 1.1-.32 1.36-.84l.72-1.4c.26-.52.78-.84 1.36-.84H20V17.4A2.6 2.6 0 0 1 17.4 20H6.6A2.6 2.6 0 0 1 4 17.4V11.25Z"
+  />
+</svg>

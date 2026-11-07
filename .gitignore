@@ -8,6 +8,10 @@ build/
 coverage/
 .turbo/
 *.tsbuildinfo
+.scannerwork/
+.vitest-cache/
+apps/web/coverage/
+apps/web/.vitest-cache/
 apps/web/prisma/*.db
 apps/web/prisma/*.db-journal
 apps/web/node_modules/

@@ -2,34 +2,47 @@
 
 **Português** · [English](README.en.md)
 
-**Mini-app local para capturar emails SMTP durante o desenvolvimento — adeus subscrição onerosa do Mailtrap.io.**  
-Formatação de emails em HTML para ecrâs desktop, tablet e smartphone.  
-Exta: "Lorem ipsun generator" com contador de parágrafos e palavras, criação de listas Lorem e contador de caracteres de string.
+**Captura SMTP local para desenvolvimento — sem Mailtrap.io, sem conta cloud, sem faturação.**
 
-## O que inclui
+Ambiente self-hosted de testes de email transacional: a tua app envia SMTP como sempre; o localfakemail captura as mensagens, nunca as entrega a destinatários reais, e deixa-te inspecioná-las na UI — com preview HTML em desktop / tablet / smartphone.
 
-- **SMTP** em `127.0.0.1:1025` com autenticação obrigatória
-- **UI** em `http://127.0.0.1:8025` (inbox + definições)
-- **PostgreSQL** interno (não exposto ao host)
-- Geração de **key/secret** e snippet `.env` para Laravel
+Extras na mesma UI: **gerador Lorem Ipsum** e **contador de caracteres** (úteis ao escrever templates e assuntos).
 
-## Pré-requisitos
+## Porque usar isto em vez de Mailtrap / Mailpit / afins?
 
-- Docker + Docker Compose
+| | localfakemail | Mailtrap (cloud) | Mailpit / MailHog |
+|---|---|---|---|
+| Instalação | `docker compose up` | Conta + projeto cloud | Docker / binário |
+| Custo | Grátis, local | Subscrição / quotas | Grátis |
+| Dados | Ficam na tua máquina | Na cloud do fornecedor | Locais |
+| Auth SMTP | Key/secret por app (gerar / revogar) | Por inbox / projeto | Tipicamente aberto ou básico |
+| Preview responsivo | Desktop · tablet · smartphone | Varia | Limitado |
+| Extras de copy | Lorem + contador de caracteres | Não | Não |
 
-## Arranque
+**Na prática:** mudas 4–5 variáveis no `.env` da app, envias um email, e ele aparece em `http://127.0.0.1:8025`. Sem registo, sem tokens de cloud, sem risco de emails de teste saírem para o mundo real.
+
+## Arranque (2 comandos)
 
 ```bash
 cp .env.example .env
-docker compose up --build
+docker compose up -d --build
 ```
 
-Abrir a UI: [http://127.0.0.1:8025](http://127.0.0.1:8025)
+| O quê | Onde |
+|-------|------|
+| UI + API | [http://127.0.0.1:8025](http://127.0.0.1:8025) |
+| SMTP | `127.0.0.1:1025` |
+| Postgres | só rede Docker interna |
+
+Pré-requisito: Docker + Docker Compose.
 
 ## Configurar na tua app
 
-1. Em **Settings**, gera um par key/secret.
-2. Copia o snippet para o `.env` de desenvolvimento da tua app. Abaixo, exemplo para app Laravel:
+1. Abre **Settings** na UI e gera um par key/secret (podes etiquetar, ex. `laravel-app`).
+2. Copia o snippet `.env` (já formatado para Laravel). O secret só é mostrado **uma vez**.
+3. Envia um email — aparece na **Inbox**.
+
+Exemplo Laravel:
 
 ```env
 MAIL_MAILER=smtp
@@ -42,42 +55,94 @@ MAIL_FROM_ADDRESS="hello@example.com"
 MAIL_FROM_NAME="${APP_NAME}"
 ```
 
-3. Envia um email a partir da app — aparece na inbox do localfakemail.
+Nodemailer / qualquer cliente SMTP:
 
-Se a app Laravel também correr em Docker na mesma máquina, usa `host.docker.internal` (ou o IP do host) em vez de `127.0.0.1` para `MAIL_HOST`.
+```js
+nodemailer.createTransport({
+  host: "127.0.0.1",
+  port: 1025,
+  secure: false,
+  auth: { user: process.env.MAIL_USERNAME, pass: process.env.MAIL_PASSWORD },
+});
+```
 
-## Portas
+Se a app também corre em Docker na mesma máquina, usa `host.docker.internal` (ou o IP do host) em `MAIL_HOST`. Se estiver no **mesmo** Compose, podes apontar para o serviço `smtp` na rede interna — sem expor a porta ao host.
 
-| Serviço | Host |
-|---------|------|
-| UI web | `127.0.0.1:8025` |
-| SMTP | `127.0.0.1:1025` |
-| Postgres | só rede Docker interna |
+## O que podes fazer
 
-Altera `WEB_PORT` / `SMTP_PORT` no `.env` se precisares de outras portas.
+### Inbox e inspeção
 
-## Segurança
+- Lista de mensagens com tamanho, anexos e estado lido/não lido
+- Preview **HTML** (sanitizado, iframe sandboxed) com viewports desktop / tablet / smartphone
+- Corpo **texto**, fonte **raw MIME**, headers, From / To / Cc, anexos descarregáveis
+- Apagar mensagens; retenção automática das N mais recentes (`EMAIL_RETENTION_LIMIT`)
 
-- Portas publicadas só em `127.0.0.1`
-- SMTP exige credenciais (bcrypt); o secret só é mostrado uma vez
-- HTML do email é sanitizado e renderizado num iframe sandboxed
-- **Não** expor este serviço à internet — é só para desenvolvimento local
+### Credenciais SMTP
+
+- Vários pares key/secret (uma app ou ambiente por credencial)
+- Labels, revogação imediata, secret nunca guardado em texto claro (bcrypt)
+- Snippet Laravel pronto a colar
+
+### API HTTP (para a UI e para scripts)
+
+- `GET /api/emails` · `GET /api/emails/:id` · anexos · credenciais
+- Útil para smoke tests e debugging programático local
+
+### Extras na UI
+
+- **Lorem Ipsum** — parágrafos, frases, palavras ou listas; contagem e cópia com um clique (`/lorem`)
+- **Character Counter** — conta caracteres, pré-visualiza truncagem com ellipsis (`/counter`)
+
+## Arquitetura
+
+Três contentores na rede Docker `localfakemail`. Portas do host só em `127.0.0.1`.
+
+```mermaid
+flowchart LR
+  subgraph Host["Máquina do developer"]
+    App["A tua app<br/>(Laravel, Node, …)"]
+    Browser["Browser<br/>:8025"]
+  end
+
+  subgraph Compose["docker compose — rede localfakemail"]
+    SMTP["smtp<br/>Node · porta 1025"]
+    WEB["web<br/>Next.js · UI + API"]
+    DB[("db<br/>PostgreSQL 16")]
+  end
+
+  App -->|"SMTP AUTH<br/>key + secret"| SMTP
+  SMTP -->|"grava email + anexos"| DB
+  Browser -->|"HTTP"| WEB
+  WEB -->|"lê / gere credenciais"| DB
+  SMTP -.->|"nunca faz relay<br/>para a Internet"| X["✗ entrega real"]
+```
+
+| Serviço | Path | Papel |
+|---------|------|--------|
+| `web` | `apps/web` | UI (Inbox, Settings, Lorem, Counter) + API REST + Prisma |
+| `smtp` | `apps/smtp` | Servidor SMTP (`smtp-server` + `mailparser`); autentica e persiste |
+| `db` | imagem oficial | Armazena emails, anexos e hashes de credenciais |
+
+Fluxo típico: app autentica no SMTP → mensagem parseada e guardada → UI/API lê do Postgres → preview na Inbox. **Nenhum** relay externo por defeito.
+
+## Segurança (local como padrão)
+
+- Portas publicadas só em `127.0.0.1` (não em `0.0.0.0`)
+- SMTP exige autenticação; secrets com bcrypt; o valor em claro só aparece na criação
+- HTML sanitizado + iframe sandboxed
+- Retenção configurável — não vender como “armazenamento infinito”; limitado pelo disco local
+- **Não** exponhas isto à Internet — é para desenvolvimento local
 
 ## Comandos úteis
 
 ```bash
-# Ver logs
-docker compose logs -f
-
-# Parar
-docker compose down
-
-# Apagar dados (emails + credenciais)
-docker compose down -v
+docker compose logs -f          # logs
+docker compose down             # parar
+docker compose down -v          # apagar dados (emails + credenciais)
 ```
 
-## Arquitetura
+Altera `WEB_PORT` / `SMTP_PORT` / `EMAIL_RETENTION_LIMIT` no `.env` se precisares.
 
-- `apps/web` — Next.js (UI + API + Prisma)
-- `apps/smtp` — servidor SMTP Node (`smtp-server` + `mailparser`)
-- `db` — PostgreSQL 16
+## Em uma frase
+
+Self-hosted email testing com Docker: captura SMTP local, inbox com preview responsivo, credenciais revogáveis, API HTTP, e ferramentas de copy (Lorem + contador) — sem cloud e sem subscrição.

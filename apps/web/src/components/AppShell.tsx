@@ -15,6 +15,11 @@ const primaryLinks = [
     label: "Lorem Ipsum",
     match: (pathname: string) => pathname.startsWith("/lorem"),
   },
+  {
+    href: "/counter",
+    label: "Character Counter",
+    match: (pathname: string) => pathname.startsWith("/counter"),
+  },
 ] as const;
 
 const inboxLinks = [
@@ -24,6 +29,13 @@ const inboxLinks = [
 
 function isInboxScope(pathname: string): boolean {
   return pathname === "/" || pathname.startsWith("/settings");
+}
+
+function eyebrowForPath(pathname: string): string {
+  if (isInboxScope(pathname)) return "Local SMTP capture";
+  if (pathname.startsWith("/counter")) return "Instant character count";
+  if (pathname.startsWith("/lorem")) return "Offline placeholder text";
+  return "Offline placeholder text";
 }
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -36,9 +48,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <header className="mb-5 grid grid-cols-1 items-end gap-4 md:grid-cols-[1fr_auto_1fr]">
         <div className="md:justify-self-start">
           <p className="mb-1 text-xs tracking-[0.18em] text-[var(--text-muted)] uppercase">
-            {inboxScope ? "Local SMTP capture" : "Offline placeholder text"}
+            {eyebrowForPath(pathname)}
           </p>
-          <h1 className="text-3xl font-semibold tracking-tight text-[var(--text)] md:text-4xl">
+          <h1 className="flex items-center gap-2.5 text-3xl font-semibold tracking-tight text-[var(--text)] md:gap-3 md:text-4xl">
+            <img
+              src="/icons/localfakemail.svg"
+              alt=""
+              width={36}
+              height={36}
+              className="size-8 shrink-0 md:size-9"
+            />
             localfakemail
           </h1>
         </div>

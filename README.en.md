@@ -2,34 +2,47 @@
 
 [Português](README.md) · **English**
 
-**Local mini-app to capture SMTP emails during development — no more expensive Mailtrap.io subscriptions.**  
-HTML email formatting preview for desktop, tablet, and smartphone screens.  
-Extra: Lorem ipsum generator with paragraph and word counters, Lorem list creation, and string character counter.
+**Local SMTP capture for development — no Mailtrap.io, no cloud account, no billing.**
 
-## What's included
+Self-hosted transactional email testing: your app sends SMTP as usual; localfakemail captures the messages, never delivers them to real recipients, and lets you inspect them in the UI — including HTML preview for desktop / tablet / smartphone.
 
-- **SMTP** on `127.0.0.1:1025` with required authentication
-- **UI** at `http://127.0.0.1:8025` (inbox + settings)
-- Internal **PostgreSQL** (not exposed to the host)
-- **Key/secret** generation and `.env` snippet for Laravel
+Same UI extras: **Lorem Ipsum generator** and **character counter** (handy when writing templates and subject lines).
 
-## Prerequisites
+## Why this instead of Mailtrap / Mailpit / similar?
 
-- Docker + Docker Compose
+| | localfakemail | Mailtrap (cloud) | Mailpit / MailHog |
+|---|---|---|---|
+| Setup | `docker compose up` | Cloud account + project | Docker / binary |
+| Cost | Free, local | Subscription / quotas | Free |
+| Data | Stays on your machine | Vendor cloud | Local |
+| SMTP auth | Per-app key/secret (generate / revoke) | Per inbox / project | Often open or basic |
+| Responsive preview | Desktop · tablet · smartphone | Varies | Limited |
+| Copy extras | Lorem + character counter | No | No |
 
-## Getting started
+**In practice:** change 4–5 variables in your app `.env`, send an email, and it shows up at `http://127.0.0.1:8025`. No signup, no cloud tokens, no risk of test mail leaving your machine.
+
+## Getting started (2 commands)
 
 ```bash
 cp .env.example .env
-docker compose up --build
+docker compose up -d --build
 ```
 
-Open the UI: [http://127.0.0.1:8025](http://127.0.0.1:8025)
+| What | Where |
+|------|-------|
+| UI + API | [http://127.0.0.1:8025](http://127.0.0.1:8025) |
+| SMTP | `127.0.0.1:1025` |
+| Postgres | Docker network only |
+
+Prerequisite: Docker + Docker Compose.
 
 ## Configure in your app
 
-1. In **Settings**, generate a key/secret pair.
-2. Copy the snippet into your app's development `.env`. Example for a Laravel app:
+1. Open **Settings** in the UI and generate a key/secret pair (optional label, e.g. `laravel-app`).
+2. Copy the `.env` snippet (Laravel-ready). The secret is shown **once**.
+3. Send an email — it appears in the **Inbox**.
+
+Laravel example:
 
 ```env
 MAIL_MAILER=smtp
@@ -42,42 +55,90 @@ MAIL_FROM_ADDRESS="hello@example.com"
 MAIL_FROM_NAME="${APP_NAME}"
 ```
 
-3. Send an email from your app — it appears in the localfakemail inbox.
+Nodemailer / any SMTP client:
 
-If the Laravel app also runs in Docker on the same machine, use `host.docker.internal` (or the host IP) instead of `127.0.0.1` for `MAIL_HOST`.
+```js
+nodemailer.createTransport({
+  host: "127.0.0.1",
+  port: 1025,
+  secure: false,
+  auth: { user: process.env.MAIL_USERNAME, pass: process.env.MAIL_PASSWORD },
+});
+```
 
-## Ports
+If the app also runs in Docker on the same machine, use `host.docker.internal` (or the host IP) for `MAIL_HOST`. If it shares the **same** Compose stack, point at the `smtp` service on the internal network — no need to publish the SMTP port to the host.
 
-| Service | Host |
-|---------|------|
-| Web UI | `127.0.0.1:8025` |
-| SMTP | `127.0.0.1:1025` |
-| Postgres | Docker network only |
+## What you can do
 
-Change `WEB_PORT` / `SMTP_PORT` in `.env` if you need different ports.
+### Inbox and inspection
+- Message list with size, attachments, and read/unread state
+- **HTML** preview (sanitized, sandboxed iframe) with desktop / tablet / smartphone viewports
+- **Text** body, **raw MIME**, headers, From / To / Cc, downloadable attachments
+- Delete messages; automatic retention of the latest N (`EMAIL_RETENTION_LIMIT`)
 
-## Security
+### SMTP credentials
+- Multiple key/secret pairs (one app or environment per credential)
+- Labels, instant revoke, secret never stored in plaintext (bcrypt)
+- Ready-to-paste Laravel snippet
 
-- Published ports are bound to `127.0.0.1` only
-- SMTP requires credentials (bcrypt); the secret is shown only once
-- Email HTML is sanitized and rendered in a sandboxed iframe
-- **Do not** expose this service to the internet — it is for local development only
+### HTTP API (for the UI and for scripts)
+- `GET /api/emails` · `GET /api/emails/:id` · attachments · credentials
+- Useful for local smoke tests and programmatic debugging
+
+### UI extras
+- **Lorem Ipsum** — paragraphs, sentences, words, or lists; counts and one-click copy (`/lorem`)
+- **Character Counter** — character count plus truncated preview with ellipsis (`/counter`)
+
+## Architecture
+
+Three containers on the Docker network `localfakemail`. Host ports bound to `127.0.0.1` only.
+
+```mermaid
+flowchart LR
+  subgraph Host["Developer machine"]
+    App["Your app<br/>(Laravel, Node, …)"]
+    Browser["Browser<br/>:8025"]
+  end
+
+  subgraph Compose["docker compose — localfakemail network"]
+    SMTP["smtp<br/>Node · port 1025"]
+    WEB["web<br/>Next.js · UI + API"]
+    DB[("db<br/>PostgreSQL 16")]
+  end
+
+  App -->|"SMTP AUTH<br/>key + secret"| SMTP
+  SMTP -->|"stores email + attachments"| DB
+  Browser -->|"HTTP"| WEB
+  WEB -->|"reads / manages credentials"| DB
+  SMTP -.->|"never relays<br/>to the Internet"| X["✗ real delivery"]
+```
+
+| Service | Path | Role |
+|---------|------|------|
+| `web` | `apps/web` | UI (Inbox, Settings, Lorem, Counter) + REST API + Prisma |
+| `smtp` | `apps/smtp` | SMTP server (`smtp-server` + `mailparser`); authenticates and persists |
+| `db` | official image | Stores emails, attachments, and credential hashes |
+
+Typical flow: app authenticates to SMTP → message parsed and stored → UI/API reads from Postgres → preview in Inbox. **No** external relay by default.
+
+## Security (local by design)
+
+- Published ports bound to `127.0.0.1` only (not `0.0.0.0`)
+- SMTP requires authentication; secrets hashed with bcrypt; plaintext shown only at creation
+- Sanitized HTML + sandboxed iframe
+- Configurable retention — not “infinite storage”; limited by local disk
+- **Do not** expose this to the internet — local development only
 
 ## Useful commands
 
 ```bash
-# Follow logs
-docker compose logs -f
-
-# Stop
-docker compose down
-
-# Wipe data (emails + credentials)
-docker compose down -v
+docker compose logs -f          # logs
+docker compose down             # stop
+docker compose down -v          # wipe data (emails + credentials)
 ```
 
-## Architecture
+Change `WEB_PORT` / `SMTP_PORT` / `EMAIL_RETENTION_LIMIT` in `.env` if needed.
 
-- `apps/web` — Next.js (UI + API + Prisma)
-- `apps/smtp` — Node SMTP server (`smtp-server` + `mailparser`)
-- `db` — PostgreSQL 16
+## In one sentence
+
+Self-hosted email testing with Docker: local SMTP capture, responsive inbox preview, revocable credentials, HTTP API, and copy tools (Lorem + character counter) — no cloud, no subscription.

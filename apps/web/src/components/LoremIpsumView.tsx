@@ -46,6 +46,16 @@ function copyButtonLabel(copyState: CopyState): string {
   return "Copy";
 }
 
+function copyButtonClass(copyState: CopyState): string {
+  if (copyState === "copied") {
+    return "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--unread)]";
+  }
+  if (copyState === "error") {
+    return "border-[var(--danger)] text-[var(--danger)]";
+  }
+  return "border-[var(--line)] text-[var(--text-muted)] hover:border-[var(--accent)] hover:text-[var(--unread)]";
+}
+
 function isMacPlatform(): boolean {
   if (typeof navigator === "undefined") return false;
   return /Mac|iPhone|iPad/i.test(navigator.platform);
@@ -179,10 +189,12 @@ export function LoremIpsumView() {
                   className="w-full accent-[var(--accent)]"
                 />
                 <input
+                  id="lorem-count-number"
                   type="number"
                   min={1}
                   max={getCountMax(unit)}
                   value={count}
+                  aria-label="Count"
                   onChange={(event) =>
                     setCount(clampLoremCount(unit, Number(event.target.value) || 1))
                   }
@@ -196,10 +208,10 @@ export function LoremIpsumView() {
                     type="checkbox"
                     checked={startWithLorem}
                     onChange={(event) => setStartWithLorem(event.target.checked)}
-                    className="mt-0.5 accent-[var(--accent)]"
+                    className="mt-0.5 shrink-0 accent-[var(--accent)]"
                   />
-                  <span>
-                    <span className="block text-sm">Start with &ldquo;Lorem ipsum&rdquo;</span>
+                  <span className="min-w-0 text-sm">
+                    Start with “Lorem ipsum”
                     <span className="mt-0.5 block text-xs text-[var(--text-muted)]">
                       Classic opening for the first block.
                     </span>
@@ -234,7 +246,7 @@ export function LoremIpsumView() {
                   onClick={selectAll}
                   className="rounded-lg border border-[var(--line)] px-3 py-1.5 text-xs text-[var(--text-muted)] transition hover:border-[var(--accent)] hover:text-[var(--text)]"
                 >
-                  Select all
+                  Select all{" "}
                   <span className="ml-1.5 hidden font-[family-name:var(--font-mono)] text-[10px] text-[var(--text-muted)] sm:inline">
                     {modKey}A
                   </span>
@@ -243,13 +255,7 @@ export function LoremIpsumView() {
                   type="button"
                   onClick={() => void copyText()}
                   disabled={!text}
-                  className={`rounded-lg border px-3 py-1.5 text-xs transition disabled:cursor-not-allowed disabled:opacity-50 ${
-                    copyState === "copied"
-                      ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--unread)]"
-                      : copyState === "error"
-                        ? "border-[var(--danger)] text-[var(--danger)]"
-                        : "border-[var(--line)] text-[var(--text-muted)] hover:border-[var(--accent)] hover:text-[var(--unread)]"
-                  }`}
+                  className={`rounded-lg border px-3 py-1.5 text-xs transition disabled:cursor-not-allowed disabled:opacity-50 ${copyButtonClass(copyState)}`}
                 >
                   {copyButtonLabel(copyState)}
                   {copyState === "idle" ? (

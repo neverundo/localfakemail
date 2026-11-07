@@ -175,8 +175,15 @@ const WORDS = [
 const OPENING =
   "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
 
+/** Uniform float in [0, 1) via CSPRNG (Web Crypto). */
+function randomFloat(): number {
+  const buf = new Uint32Array(1);
+  globalThis.crypto.getRandomValues(buf);
+  return buf[0]! / 4294967296;
+}
+
 function randomInt(min: number, max: number): number {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
+  return Math.floor(randomFloat() * (max - min + 1)) + min;
 }
 
 function pickWord(): string {
@@ -197,12 +204,12 @@ function generateSentence(minWords = 8, maxWords = 18): string {
 
   words[0] = capitalize(words[0]!);
 
-  if (length > 6 && Math.random() > 0.55) {
+  if (length > 6 && randomFloat() > 0.55) {
     const commaAt = randomInt(3, length - 3);
     words[commaAt] = `${words[commaAt]},`;
   }
 
-  const ending = Math.random() > 0.12 ? "." : "?";
+  const ending = randomFloat() > 0.12 ? "." : "?";
   return `${words.join(" ")}${ending}`;
 }
 

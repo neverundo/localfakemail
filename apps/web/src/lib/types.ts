@@ -61,7 +61,9 @@ export function formatRelativeTime(iso: string): string {
 }
 
 export function displayAddress(from: string): string {
-  const match = from.match(/^(.*?)\s*<([^>]+)>$/);
-  if (match) return match[1].trim() || match[2];
-  return from || "(unknown)";
+  const open = from.lastIndexOf("<");
+  if (open <= 0 || !from.endsWith(">")) return from || "(unknown)";
+  const name = from.slice(0, open).trim();
+  const email = from.slice(open + 1, -1).trim();
+  return name || email || "(unknown)";
 }
