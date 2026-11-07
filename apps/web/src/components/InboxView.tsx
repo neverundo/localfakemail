@@ -6,12 +6,26 @@ import { displayAddress, formatBytes, formatRelativeTime } from "@/lib/types";
 import { AppShell } from "@/components/AppShell";
 
 type PreviewTab = "html" | "text" | "raw";
+type PreviewViewport = "desktop" | "tablet" | "smartphone";
+
+const VIEWPORT_WIDTHS: Record<PreviewViewport, string> = {
+  desktop: "100%",
+  tablet: "768px",
+  smartphone: "375px",
+};
+
+const VIEWPORT_OPTIONS: { id: PreviewViewport; label: string; icon: string }[] = [
+  { id: "desktop", label: "Desktop", icon: "/icons/desktop.svg" },
+  { id: "tablet", label: "Tablet", icon: "/icons/tablet.svg" },
+  { id: "smartphone", label: "Smartphone", icon: "/icons/smartphone.svg" },
+];
 
 export function InboxView() {
   const [emails, setEmails] = useState<EmailListItem[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [detail, setDetail] = useState<EmailDetail | null>(null);
   const [tab, setTab] = useState<PreviewTab>("html");
+  const [viewport, setViewport] = useState<PreviewViewport>("desktop");
   const [loadingList, setLoadingList] = useState(true);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -244,40 +258,69 @@ export function InboxView() {
                   ) : null}
                 </div>
 
-                <div className="flex gap-1 border-b border-[var(--line)] px-4 py-2">
-                  {(
-                    [
-                      ["html", "HTML", Boolean(detail.previewHtml)],
-                      ["text", "Text", Boolean(detail.textBody)],
-                      ["raw", "Raw", true],
-                    ] as const
-                  ).map(([key, label, enabled]) => (
-                    <button
-                      key={key}
-                      type="button"
-                      disabled={!enabled}
-                      onClick={() => setTab(key)}
-                      className={`rounded-lg px-3 py-1.5 text-xs transition ${
-                        tab === key
-                          ? "bg-[var(--accent-soft)] text-[var(--unread)]"
-                          : enabled
-                            ? "text-[var(--text-muted)] hover:text-[var(--text)]"
-                            : "cursor-not-allowed text-[var(--line)]"
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  ))}
+                <div className="flex items-center justify-between gap-2 border-b border-[var(--line)] px-4 py-2">
+                  <div className="flex gap-1">
+                    {(
+                      [
+                        ["html", "HTML", Boolean(detail.previewHtml)],
+                        ["text", "Text", Boolean(detail.textBody)],
+                        ["raw", "Raw", true],
+                      ] as const
+                    ).map(([key, label, enabled]) => (
+                      <button
+                        key={key}
+                        type="button"
+                        disabled={!enabled}
+                        onClick={() => setTab(key)}
+                        className={`rounded-lg px-3 py-1.5 text-xs transition ${
+                          tab === key
+                            ? "bg-[var(--accent-soft)] text-[var(--unread)]"
+                            : enabled
+                              ? "text-[var(--text-muted)] hover:text-[var(--text)]"
+                              : "cursor-not-allowed text-[var(--line)]"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  {tab === "html" && detail.previewHtml ? (
+                    <div className="flex items-center gap-0.5" role="group" aria-label="Preview viewport">
+                      {VIEWPORT_OPTIONS.map(({ id, label, icon }) => (
+                        <button
+                          key={id}
+                          type="button"
+                          aria-label={label}
+                          aria-pressed={viewport === id}
+                          title={label}
+                          onClick={() => setViewport(id)}
+                          className={`rounded-lg p-1.5 transition ${
+                            viewport === id
+                              ? "bg-[var(--accent-soft)] opacity-100"
+                              : "opacity-45 hover:opacity-80"
+                          }`}
+                        >
+                          <img src={icon} alt="" width={20} height={20} className="block" />
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
                 </div>
 
                 <div className="min-h-0 flex-1 overflow-hidden p-3">
                   {tab === "html" && detail.previewHtml ? (
-                    <iframe
-                      title="Email HTML preview"
-                      sandbox=""
-                      srcDoc={detail.previewHtml}
-                      className="h-full w-full rounded-lg border border-[var(--line)] bg-white"
-                    />
+                    <div className="flex h-full justify-center overflow-auto">
+                      <iframe
+                        title="Email HTML preview"
+                        sandbox=""
+                        srcDoc={detail.previewHtml}
+                        style={{
+                          width: VIEWPORT_WIDTHS[viewport],
+                          maxWidth: "100%",
+                        }}
+                        className="h-full shrink-0 rounded-lg border border-[var(--line)] bg-white transition-[width] duration-200"
+                      />
+                    </div>
                   ) : null}
                   {tab === "text" ? (
                     <pre className="h-full overflow-auto rounded-lg border border-[var(--line)] bg-[var(--bg-panel)] p-4 font-[family-name:var(--font-mono)] text-xs leading-relaxed whitespace-pre-wrap text-[var(--text)]">

@@ -1,6 +1,10 @@
 # localfakemail
 
-Mini-app local para capturar emails SMTP durante o desenvolvimento — substituto do Mailtrap.io na tua máquina.
+**Português** · [English](README.en.md)
+
+**Mini-app local para capturar emails SMTP durante o desenvolvimento — adeus subscrição onerosa do Mailtrap.io.**  
+Formatação de emails em HTML para ecrâs desktop, tablet e smartphone.  
+Exta: "Lorem ipsun generator" com contador de parágrafos e palavras, criação de listas Lorem e contador de caracteres de string.
 
 ## O que inclui
 
@@ -22,10 +26,10 @@ docker compose up --build
 
 Abrir a UI: [http://127.0.0.1:8025](http://127.0.0.1:8025)
 
-## Configurar Laravel
+## Configurar na tua app
 
 1. Em **Settings**, gera um par key/secret.
-2. Copia o snippet para o `.env` da app Laravel:
+2. Copia o snippet para o `.env` de desenvolvimento da tua app. Abaixo, exemplo para app Laravel:
 
 ```env
 MAIL_MAILER=smtp
