@@ -134,7 +134,7 @@ export function LoremIpsumView() {
             <div className="border-b border-[var(--line)] px-4 py-4">
               <p className="text-sm font-medium">Generator</p>
               <p className="mt-1 text-xs leading-relaxed text-[var(--text-muted)]">
-                Runs fully offline in the browser — no API calls.
+                Offline Lorem Ipsum. No API calls.
               </p>
             </div>
 

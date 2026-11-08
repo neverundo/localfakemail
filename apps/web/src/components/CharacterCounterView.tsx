@@ -140,7 +140,7 @@ export function CharacterCounterView() {
                 <p className="mt-2 text-xs text-[var(--text-muted)]">
                   {isTruncated
                     ? `Preview shows ${n} characters + “…”`
-                    : "Preview shows the full text when it fits in N."}
+                    : "Use keyboard arrows to adjust N."}
                 </p>
               </div>
             </div>

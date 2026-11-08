@@ -8,6 +8,8 @@ Self-hosted transactional email testing: your app sends SMTP as usual; localfake
 
 Same UI extras: **Lorem Ipsum generator** and **character counter** (handy when writing templates and subject lines).
 
+![Inbox with responsive HTML preview](screenshots/1-smtp-local.png)
+
 ## Why this instead of Mailtrap / Mailpit / similar?
 
 | | localfakemail | Mailtrap (cloud) | Mailpit / MailHog |
@@ -41,6 +43,8 @@ Prerequisite: Docker + Docker Compose.
 1. Open **Settings** in the UI and generate a key/secret pair (optional label, e.g. `laravel-app`).
 2. Copy the `.env` snippet (Laravel-ready). The secret is shown **once**.
 3. Send an email — it appears in the **Inbox**.
+
+![SMTP credential generation and Laravel snippet](screenshots/3-smtp-new-credentials.png)
 
 Laravel example:
 
@@ -81,6 +85,8 @@ If the app also runs in Docker on the same machine, use `host.docker.internal` (
 - Labels, instant revoke, secret never stored in plaintext (bcrypt)
 - Ready-to-paste Laravel snippet
 
+![Manage existing credentials (generate / revoke)](screenshots/2-smtp-token.png)
+
 ### HTTP API (for the UI and for scripts)
 - `GET /api/emails` · `GET /api/emails/:id` · attachments · credentials
 - Useful for local smoke tests and programmatic debugging
@@ -88,6 +94,10 @@ If the app also runs in Docker on the same machine, use `host.docker.internal` (
 ### UI extras
 - **Lorem Ipsum** — paragraphs, sentences, words, or lists; counts and one-click copy (`/lorem`)
 - **Character Counter** — character count plus truncated preview with ellipsis (`/counter`)
+
+![Offline Lorem Ipsum generator](screenshots/4-li-generator.png)
+
+![Character counter with truncated preview](screenshots/5-char-counter.png)
 
 ## Architecture
 
