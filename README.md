@@ -2,6 +2,8 @@
 
 **Português** · [English](README.en.md)
 
+[![CI](https://github.com/neverundo/localfakemail/actions/workflows/ci.yml/badge.svg)](https://github.com/neverundo/localfakemail/actions/workflows/ci.yml)
+
 **Captura SMTP local para desenvolvimento — sem Mailtrap.io, sem conta cloud, sem faturação.**
 
 Ambiente self-hosted de testes de email transacional: a tua app envia SMTP como sempre; o localfakemail captura as mensagens, nunca as entrega a destinatários reais, e deixa-te inspecioná-las na UI — com preview HTML em desktop / tablet / smartphone.
@@ -134,6 +136,11 @@ flowchart LR
 | `db` | imagem oficial | Armazena emails, anexos e hashes de credenciais |
 
 Fluxo típico: app autentica no SMTP → mensagem parseada e guardada → UI/API lê do Postgres → preview na Inbox. **Nenhum** relay externo por defeito.
+
+## Qualidade
+
+- **CI** (GitHub Actions): em cada push/PR para `main` corre testes Vitest com coverage (`apps/web`) e typecheck TypeScript (`apps/smtp`). O LCOV fica disponível como artefact do workflow.
+- **SonarQube** (opcional, só na tua máquina): Community Edition local — **não** faz parte do `docker compose` da app. Se tiveres um SonarQube em `localhost:9000`, usa `./sonar-scan.sh` com `SONAR_TOKEN` no `.env` (ver `.env.example`). Resultados do scan não vão para o Git; o gate público do repo é o CI.
 
 ## Segurança (local como padrão)
 
