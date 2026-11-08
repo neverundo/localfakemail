@@ -231,7 +231,7 @@ async function main(): Promise<void> {
     console.log(`localfakemail SMTP listening on 0.0.0.0:${SMTP_PORT}`);
   });
 
-  const shutdown = async () => {
+  const shutdown = () => {
     console.log("Shutting down SMTP server...");
     server.close(() => {
       void pool.end().then(() => process.exit(0));
@@ -239,14 +239,16 @@ async function main(): Promise<void> {
   };
 
   process.on("SIGTERM", () => {
-    void shutdown();
+    shutdown();
   });
   process.on("SIGINT", () => {
-    void shutdown();
+    shutdown();
   });
 }
 
-main().catch((error) => {
+try {
+  await main();
+} catch (error) {
   console.error(error);
   process.exit(1);
-});
+}

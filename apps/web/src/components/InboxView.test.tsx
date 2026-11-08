@@ -106,11 +106,17 @@ describe("InboxView", () => {
     expect(screen.queryByTestId("device-frame-tablet")).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Tablet" }));
-    expect(screen.getByTestId("device-frame-tablet")).toBeInTheDocument();
+    expect(screen.getByTestId("device-frame-tablet")).toHaveStyle({
+      width: "768px",
+      height: "1024px",
+    });
     expect(screen.getByTitle("Email HTML preview")).toHaveAttribute("data-viewport", "tablet");
 
     await user.click(screen.getByRole("button", { name: "Smartphone" }));
-    expect(screen.getByTestId("device-frame-smartphone")).toBeInTheDocument();
+    expect(screen.getByTestId("device-frame-smartphone")).toHaveStyle({
+      width: "322px",
+      height: "570px",
+    });
     expect(screen.getByTitle("Email HTML preview")).toHaveAttribute(
       "data-viewport",
       "smartphone",

@@ -212,6 +212,7 @@ export function LoremIpsumView() {
                   />
                   <span className="min-w-0 text-sm">
                     Start with “Lorem ipsum”
+                    {/* */}
                     <span className="mt-0.5 block text-xs text-[var(--text-muted)]">
                       Classic opening for the first block.
                     </span>

@@ -21,7 +21,7 @@ export async function GET(_request: Request, { params }: Params) {
     headers: {
       "Content-Type": attachment.contentType,
       "Content-Length": String(attachment.size),
-      "Content-Disposition": `attachment; filename="${attachment.filename.replace(/"/g, "")}"`,
+      "Content-Disposition": `attachment; filename="${attachment.filename.replaceAll('"', "")}"`,
       "Cache-Control": "no-store",
     },
   });

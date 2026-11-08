@@ -38,7 +38,7 @@ function eyebrowForPath(pathname: string): string {
   return "Offline placeholder text";
 }
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function AppShell({ children }: Readonly<{ children: React.ReactNode }>) {
   const pathname = usePathname();
   const inboxScope = isInboxScope(pathname);
   const activePrimary = primaryLinks.find((link) => link.match(pathname)) ?? primaryLinks[0];
@@ -58,6 +58,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               height={36}
               className="size-8 shrink-0 md:size-9"
             />
+            {/* */}
             localfakemail
           </h1>
         </div>

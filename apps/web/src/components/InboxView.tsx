@@ -8,10 +8,11 @@ import { AppShell } from "@/components/AppShell";
 type PreviewTab = "html" | "text" | "raw";
 type PreviewViewport = "desktop" | "tablet" | "smartphone";
 
-const VIEWPORT_WIDTHS: Record<PreviewViewport, string> = {
-  desktop: "100%",
-  tablet: "768px",
-  smartphone: "375px",
+/** Match Mailpit responsiveSizes: content viewport, chrome padding is outside (content-box). */
+const VIEWPORT_SIZES: Record<PreviewViewport, { width: string; height: string }> = {
+  desktop: { width: "100%", height: "100%" },
+  tablet: { width: "768px", height: "1024px" },
+  smartphone: { width: "322px", height: "570px" },
 };
 
 const VIEWPORT_OPTIONS: { id: PreviewViewport; label: string; icon: string }[] = [
@@ -91,28 +92,22 @@ function HtmlPreview({
   html: string;
   viewport: PreviewViewport;
 }>) {
-  const iframe = (
-    <iframe
-      key={viewport}
-      title="Email HTML preview"
-      sandbox=""
-      srcDoc={html}
-      data-viewport={viewport}
-      style={
-        viewport === "desktop"
-          ? { width: VIEWPORT_WIDTHS.desktop, maxWidth: "100%" }
-          : undefined
-      }
-      className={
-        viewport === "desktop"
-          ? "h-full shrink-0 rounded-lg border border-[var(--line)] bg-white transition-[width] duration-200"
-          : "h-full w-full bg-white"
-      }
-    />
-  );
+  const size = VIEWPORT_SIZES[viewport];
 
   if (viewport === "desktop") {
-    return <div className="flex h-full justify-center overflow-auto">{iframe}</div>;
+    return (
+      <div className="flex h-full justify-center overflow-auto">
+        <iframe
+          key={viewport}
+          title="Email HTML preview"
+          sandbox=""
+          srcDoc={html}
+          data-viewport={viewport}
+          style={{ width: size.width, height: size.height, maxWidth: "100%" }}
+          className="shrink-0 rounded-lg border border-[var(--line)] bg-white transition-[width] duration-200"
+        />
+      </div>
+    );
   }
 
   return (
@@ -120,11 +115,16 @@ function HtmlPreview({
       <div
         className={`device-frame device-frame--${viewport}`}
         data-testid={`device-frame-${viewport}`}
-        style={{ width: VIEWPORT_WIDTHS[viewport], maxWidth: "100%" }}
+        style={{ width: size.width, height: size.height }}
       >
-        <div className="device-frame__sensor" aria-hidden />
-        <div className="device-frame__screen">{iframe}</div>
-        <div className="device-frame__home" aria-hidden />
+        <iframe
+          key={viewport}
+          title="Email HTML preview"
+          sandbox=""
+          srcDoc={html}
+          data-viewport={viewport}
+          className="device-frame__screen"
+        />
       </div>
     </div>
   );
